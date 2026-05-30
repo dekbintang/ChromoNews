@@ -1,1 +1,11 @@
+# Dataset mentah yang ukurannya terlalu besar
 data/news.csv
+
+# File rahasia (SANGAT PENTING!)
+.env
+
+# File cache dan hasil auto-generate
+corpus_embeddings.npy
+__pycache__/
+*.pyc
+.pytest_cache/
