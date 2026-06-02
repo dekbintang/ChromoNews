@@ -196,28 +196,37 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- FUNGSI CACHING UNTUK LOAD DATA & MODEL ---
-@st.cache_resource(show_spinner="Memuat Dataset dan Index Search...")
-def load_system():
-    # 1. Load Data
+# --- FUNGSI CACHING UNTUK LOAD DATA & MODEL (DIOPTIMASI) ---
+@st.cache_resource(show_spinner="📄 Memuat Dataset...")
+def load_data():
     try:
         df = pd.read_csv('preprocessed_news_sample.csv')
+        return df
     except FileNotFoundError:
         st.error("File 'preprocessed_news_sample.csv' tidak ditemukan. Pastikan modul 1 & 2 sudah dijalankan.")
-        return None, None, None, None
+        return None
 
-    # 2. Build BM25 Index
-    tokenized_corpus = [str(doc).split() for doc in df['processed_content']]
+@st.cache_resource(show_spinner="🔍 Membangun BM25 Index...")
+def load_bm25(_df):
+    tokenized_corpus = [str(doc).split() for doc in _df['processed_content']]
     bm25_index = build_bm25_index(tokenized_corpus)
+    return bm25_index
 
-    # 3. Load Semantic Model & Embeddings
+@st.cache_resource(show_spinner="🧠 Memuat Model Semantic Search...")
+def load_semantic(_df):
+    import gc
     model = load_embedding_model()
-    corpus_embeddings = encode_corpus(model, df['content'].tolist())
+    corpus_embeddings = encode_corpus(model, _df['content'].tolist())
+    gc.collect()  # Bersihkan memori yang tidak terpakai
+    return model, corpus_embeddings
 
-    return df, bm25_index, model, corpus_embeddings
-
-# --- INISIALISASI ---
-df, bm25_index, semantic_model, corpus_embeddings = load_system()
+# --- INISIALISASI (BERTAHAP) ---
+df = load_data()
+if df is not None:
+    bm25_index = load_bm25(df)
+    semantic_model, corpus_embeddings = load_semantic(df)
+else:
+    bm25_index, semantic_model, corpus_embeddings = None, None, None
 
 # --- SIDEBAR: KONFIGURASI & INFO ---
 with st.sidebar:
