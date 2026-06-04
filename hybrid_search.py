@@ -36,7 +36,7 @@ def reciprocal_rank_fusion(bm25_results, semantic_results, k=60, top_k=10):
 # --- Untuk testing mandiri ---
 if __name__ == "__main__":
     import pandas as pd
-    from preprocess import preprocess_text
+    from preprocess import preprocess_for_bm25
     from bm25_search import build_bm25_index, search_bm25
     from semantic_search import load_embedding_model, encode_corpus, search_semantic
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # --- Hybrid Search ---
     query_raw = "perkembangan kasus Rafael Alun pajak"
-    query_processed = preprocess_text(query_raw)
+    query_processed = preprocess_for_bm25(query_raw)
     print(f"\n[3/3] Menjalankan Hybrid Search...")
     print(f"Query asli     : {query_raw}")
     print(f"Query processed: {query_processed}")

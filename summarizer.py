@@ -97,6 +97,97 @@ Berikut adalah artikel-artikelnya:
             "chronological_summary": "Pastikan API Key valid dan kuota mencukupi."
         }
 
+
+def extract_5w1h(article, query):
+    """
+    Mengekstrak elemen 5W1H dari satu artikel berita menggunakan Gemini Agent.
+    
+    Args:
+        article: Dict dengan keys: 'title', 'content', 'date'
+        query: Query pencarian user (untuk konteks)
+    Returns:
+        {
+            "what": "...",    # Apa yang terjadi
+            "who": "...",     # Siapa yang terlibat
+            "when": "...",    # Kapan terjadi
+            "where": "...",   # Di mana terjadi
+            "why": "...",     # Mengapa terjadi
+            "how": "..."      # Bagaimana bisa terjadi
+        }
+    """
+    default_result = {
+        "what": "Tidak terdeteksi",
+        "who": "Tidak terdeteksi",
+        "when": "Tidak terdeteksi",
+        "where": "Tidak terdeteksi",
+        "why": "Tidak terdeteksi",
+        "how": "Tidak terdeteksi"
+    }
+    
+    if not article:
+        return default_result
+
+    # Ambil konten artikel (max 2000 karakter untuk efisiensi token)
+    content = str(article.get('content', ''))[:2000]
+    
+    prompt = f"""Kamu adalah AI News Analyst. Analisis artikel berita berikut dan ekstrak elemen 5W1H (What, Who, When, Where, Why, How).
+
+Konteks pencarian: "{query}"
+
+Judul: {article.get('title', 'Tidak ada judul')}
+Tanggal Terbit: {article.get('date', 'Tidak diketahui')}
+Isi Artikel:
+{content}
+
+Instruksi:
+- Ekstrak setiap elemen 5W1H secara ringkas (1-2 kalimat per elemen)
+- Jika suatu elemen tidak ditemukan dalam artikel, isi dengan "Tidak disebutkan dalam artikel"
+- Gunakan bahasa Indonesia yang baku
+- HANYA KEMBALIKAN JSON VALID tanpa markdown apapun
+
+Format output JSON:
+{{
+    "what": "Peristiwa atau kejadian utama yang diberitakan",
+    "who": "Pihak-pihak yang terlibat (pelaku, korban, saksi, dsb)",
+    "when": "Waktu terjadinya peristiwa",
+    "where": "Lokasi terjadinya peristiwa",
+    "why": "Penyebab atau latar belakang peristiwa",
+    "how": "Kronologi singkat atau cara terjadinya peristiwa"
+}}
+"""
+
+    try:
+        model = genai.GenerativeModel('gemini-flash-latest')
+        response = model.generate_content(prompt)
+        
+        response_text = response.text.strip()
+        
+        # Bersihkan dari blok markdown JSON
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+            
+        result = json.loads(response_text)
+        
+        # Pastikan semua key ada
+        for key in ["what", "who", "when", "where", "why", "how"]:
+            if key not in result:
+                result[key] = "Tidak terdeteksi"
+        
+        return result
+        
+    except json.JSONDecodeError as e:
+        print(f"5W1H JSON Decode Error: {e}")
+        print(f"Raw Response: {response.text}")
+        return default_result
+    except Exception as e:
+        print(f"5W1H Error: {e}")
+        return default_result
+
 # --- Untuk testing mandiri ---
 if __name__ == "__main__":
     import pandas as pd

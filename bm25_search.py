@@ -44,7 +44,7 @@ def search_bm25(query, bm25_index, top_k=10):
 # --- Untuk testing mandiri ---
 if __name__ == "__main__":
     import pandas as pd
-    from preprocess import preprocess_text
+    from preprocess import preprocess_for_bm25
 
     # Load data yang sudah di-preprocessing
     print("Memuat dataset...")
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # Test pencarian
     query_raw = "kasus korupsi KPK"
-    query_processed = preprocess_text(query_raw)
+    query_processed = preprocess_for_bm25(query_raw)
     print(f"\nQuery asli     : {query_raw}")
     print(f"Query processed: {query_processed}")
 
